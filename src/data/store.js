@@ -127,10 +127,14 @@ async function updateCanteen(id, d) {
   return getCanteenById(id);
 }
 
-async function listCanteensByOrgIds(orgIds) {
+async function listCanteensByOrgIds(orgIds, { district, status, keyword } = {}) {
   if (!orgIds || !orgIds.length) return [];
-  const placeholders = orgIds.map(() => '?').join(',');
-  const [r] = await getPool().query(`SELECT * FROM canteens WHERE org_id IN (${placeholders}) ORDER BY id DESC`, orgIds);
+  const w = [`org_id IN (${orgIds.map(() => '?').join(',')})`];
+  const p = [...orgIds];
+  if (district) { w.push('district=?'); p.push(district); }
+  if (status) { w.push('status=?'); p.push(status); }
+  if (keyword) { w.push('(code LIKE ? OR name LIKE ?)'); const k = `%${keyword}%`; p.push(k, k); }
+  const [r] = await getPool().query(`SELECT * FROM canteens WHERE ${w.join(' AND ')} ORDER BY id DESC`, p);
   return r.map(mapCanteen);
 }
 
@@ -246,10 +250,12 @@ async function updateOrder(id, d) {
   return getOrderById(id);
 }
 
-async function listOrdersByElderIds(elderIds, { status } = {}) {
+async function listOrdersByElderIds(elderIds, { elderId, mealId, status } = {}) {
   if (!elderIds || !elderIds.length) return [];
   const w = [`elder_id IN (${elderIds.map(() => '?').join(',')})`];
   const p = [...elderIds];
+  if (elderId !== undefined) { w.push('elder_id=?'); p.push(elderId); }
+  if (mealId !== undefined) { w.push('meal_id=?'); p.push(mealId); }
   if (status) { w.push('status=?'); p.push(status); }
   const [r] = await getPool().query(`SELECT * FROM orders WHERE ${w.join(' AND ')} ORDER BY id DESC`, p);
   return r.map(mapOrder);
@@ -293,9 +299,14 @@ async function createAuditLog(d) {
     [d.userId ?? null, d.username, d.action, d.resourceType, String(d.resourceId), d.fieldName ?? null, d.oldValue ?? null, d.newValue ?? null, d.ipAddress ?? null, d.userAgent ?? null]);
   return x.insertId;
 }
-async function listAuditLogs({ userId, resourceType, resourceId, action, startTime, endTime, limit = 100, offset = 0 } = {}) {
+async function listAuditLogs({ userId, userIds, resourceType, resourceId, action, startTime, endTime, limit = 100, offset = 0 } = {}) {
   const w = []; const p = [];
   if (userId !== undefined) { w.push('user_id=?'); p.push(userId); }
+  if (userIds !== undefined && userIds !== null) {
+    if (!userIds.length) return [];
+    w.push(`user_id IN (${userIds.map(() => '?').join(',')})`);
+    p.push(...userIds);
+  }
   if (resourceType) { w.push('resource_type=?'); p.push(resourceType); }
   if (resourceId !== undefined) { w.push('resource_id=?'); p.push(String(resourceId)); }
   if (action) { w.push('action=?'); p.push(action); }
@@ -305,9 +316,14 @@ async function listAuditLogs({ userId, resourceType, resourceId, action, startTi
   const [r] = await getPool().query(`SELECT * FROM audit_logs ${c} ORDER BY id DESC LIMIT ? OFFSET ?`, [...p, limit, offset]);
   return r.map(mapAuditLog);
 }
-async function countAuditLogs({ userId, resourceType, resourceId, action, startTime, endTime } = {}) {
+async function countAuditLogs({ userId, userIds, resourceType, resourceId, action, startTime, endTime } = {}) {
   const w = []; const p = [];
   if (userId !== undefined) { w.push('user_id=?'); p.push(userId); }
+  if (userIds !== undefined && userIds !== null) {
+    if (!userIds.length) return 0;
+    w.push(`user_id IN (${userIds.map(() => '?').join(',')})`);
+    p.push(...userIds);
+  }
   if (resourceType) { w.push('resource_type=?'); p.push(resourceType); }
   if (resourceId !== undefined) { w.push('resource_id=?'); p.push(String(resourceId)); }
   if (action) { w.push('action=?'); p.push(action); }

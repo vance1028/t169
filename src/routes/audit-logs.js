@@ -9,13 +9,25 @@ const perm = require('../permissions');
 const router = express.Router();
 router.use(authRequired, perm.requirePermission('auditLog', 'list'));
 
-router.get('/', async (req, res, next) => {
+router.get('/', perm.maskResponse('auditLog'), async (req, res, next) => {
   try {
     const { userId, resourceType, resourceId, action, startTime, endTime, page = 1, pageSize = 20 } = req.query;
     const limit = Math.min(Number(pageSize) || 20, 100);
     const offset = (Math.max(Number(page) || 1, 1) - 1) * limit;
+
+    const access = await perm.canAccess(req.user, 'auditLog', 'list');
+    let userIds = null;
+    if (access.allowed && access.scope !== 'ALL') {
+      const orgIds = await perm.getAccessibleOrgIds(req.user.orgId, access.scope);
+      if (orgIds !== null) {
+        const allUsers = await store.listUsers();
+        userIds = allUsers.filter((u) => orgIds.includes(u.orgId)).map((u) => u.id);
+      }
+    }
+
     const filters = {
       userId: userId !== undefined ? Number(userId) : undefined,
+      userIds,
       resourceType,
       resourceId: resourceId !== undefined ? resourceId : undefined,
       action,

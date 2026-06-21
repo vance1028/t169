@@ -53,6 +53,7 @@ const DEFAULT_POLICIES = [
   { name: 'admin_audit_log_all', resourceType: 'auditLog', action: '*', role: 'ADMIN', scope: 'ALL', minSensitivity: 'INTERNAL' },
   { name: 'operator_audit_log_list', resourceType: 'auditLog', action: 'list', role: 'OPERATOR', scope: 'ORG_AND_DESCENDANTS', minSensitivity: 'INTERNAL' },
   { name: 'operator_audit_log_read', resourceType: 'auditLog', action: 'read', role: 'OPERATOR', scope: 'ORG_AND_DESCENDANTS', minSensitivity: 'INTERNAL' },
+  { name: 'admin_permission_policy_all', resourceType: 'permissionPolicy', action: '*', role: 'ADMIN', scope: 'ALL', minSensitivity: 'INTERNAL' },
 ];
 
 let policyCache = null;

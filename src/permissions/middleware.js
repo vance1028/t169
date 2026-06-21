@@ -70,7 +70,7 @@ async function scopedList(req, resourceType, options = {}) {
   switch (resourceType) {
     case 'canteen': {
       const orgIds = await getAccessibleOrgIds(req.user.orgId, access.scope);
-      return store.listCanteensByOrgIds(orgIds);
+      return store.listCanteensByOrgIds(orgIds, options);
     }
     case 'elder': {
       const canteenIds = await getAccessibleCanteenIds(req.user.orgId, access.scope);

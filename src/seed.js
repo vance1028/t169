@@ -80,11 +80,31 @@ async function seed() {
     orgId: district1.id,
   });
 
+  /* 助餐点级组织节点 */
+  const canteenOrg1 = await store.createOrganization({
+    code: 'ORG-CG-CT1',
+    name: '城关街道长者食堂',
+    type: 'CANTEEN',
+    parentId: district1.id,
+  });
+  const canteenOrg2 = await store.createOrganization({
+    code: 'ORG-JN-CT1',
+    name: '江南社区助餐点',
+    type: 'CANTEEN',
+    parentId: district2.id,
+  });
+  const canteenOrg3 = await store.createOrganization({
+    code: 'ORG-GX-CT1',
+    name: '高新颐养中心餐厅',
+    type: 'CANTEEN',
+    parentId: district3.id,
+  });
+
   const c1 = await store.createCanteen({
     code: 'CT-CG-001',
     name: '城关街道长者食堂',
     district: '城关区',
-    orgId: district1.id,
+    orgId: canteenOrg1.id,
     address: '幸福路12号',
     capacity: 80,
     status: 'OPEN',
@@ -93,7 +113,7 @@ async function seed() {
     code: 'CT-JN-002',
     name: '江南社区助餐点',
     district: '江南区',
-    orgId: district2.id,
+    orgId: canteenOrg2.id,
     address: '滨河东路5号',
     capacity: 50,
     status: 'OPEN',
@@ -102,7 +122,7 @@ async function seed() {
     code: 'CT-GX-003',
     name: '高新颐养中心餐厅',
     district: '高新区',
-    orgId: district3.id,
+    orgId: canteenOrg3.id,
     address: '科苑路88号',
     capacity: 60,
     status: 'CLOSED',
@@ -114,6 +134,29 @@ async function seed() {
     name: '张师傅',
     role: 'OPERATOR',
     orgId: district1.id,
+  });
+
+  /* 归属到助餐点级的工作人员 */
+  await store.createUser({
+    username: 'cg_canteen1',
+    password: 'cg123456',
+    name: '城关一店刘姨',
+    role: 'OPERATOR',
+    orgId: canteenOrg1.id,
+  });
+  await store.createUser({
+    username: 'jn_canteen1',
+    password: 'jn123456',
+    name: '江南一店王叔',
+    role: 'OPERATOR',
+    orgId: canteenOrg2.id,
+  });
+  await store.createUser({
+    username: 'cg_viewer1',
+    password: 'cg123456',
+    name: '城关一店观察员',
+    role: 'VIEWER',
+    orgId: canteenOrg1.id,
   });
 
   const e1 = await store.createElder({
@@ -202,8 +245,8 @@ async function seed() {
 
   return {
     skipped: false,
-    organizations: 4,
-    users: 6,
+    organizations: 7,
+    users: 9,
     canteens: 3,
     elders: 3,
     meals: 3,
