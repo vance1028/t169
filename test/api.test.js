@@ -46,11 +46,19 @@ test('未带令牌访问受保护接口 401', async () => {
 });
 
 test('助餐点列表读到种子数据，中文正确', async () => {
-  const token = await loginAs('viewer', 'viewer123');
+  const token = await loginAs('city_viewer', 'city123');
   const res = await request(app).get('/api/canteens').set('Authorization', `Bearer ${token}`);
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.body.data.length, 3);
   assert.ok(res.body.data.map((c) => c.name).includes('城关街道长者食堂'));
+});
+
+test('街道级 viewer 只能看到本街道助餐点（行级过滤）', async () => {
+  const token = await loginAs('viewer', 'viewer123');
+  const res = await request(app).get('/api/canteens').set('Authorization', `Bearer ${token}`);
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.body.data.length, 1);
+  assert.strictEqual(res.body.data[0].name, '城关街道长者食堂');
 });
 
 test('长者档案含中文忌口正确返回', async () => {
@@ -64,8 +72,9 @@ test('长者档案含中文忌口正确返回', async () => {
 
 test('operator 新建长者并能查到（含中文）', async () => {
   const token = await loginAs('operator', 'operator123');
+  const canteens = (await request(app).get('/api/canteens').set('Authorization', `Bearer ${token}`)).body.data;
   const create = await request(app).post('/api/elders').set('Authorization', `Bearer ${token}`)
-    .send({ code: 'E-9001', name: '孙桂芳', gender: 'F', age: 75, phone: '13900000000', subsidyLevel: 'B', dietary: '软烂、忌海鲜' });
+    .send({ code: 'E-9001', name: '孙桂芳', gender: 'F', age: 75, phone: '13900000000', subsidyLevel: 'B', dietary: '软烂、忌海鲜', canteenId: canteens[0].id });
   assert.strictEqual(create.status, 201, JSON.stringify(create.body));
   const id = create.body.data.id;
   const get = await request(app).get(`/api/elders/${id}`).set('Authorization', `Bearer ${token}`);
